@@ -53,17 +53,17 @@ Fahad does his zakat once a year by hand: he picks a date, takes a checkpoint of
 
 - A **checkpoint** is one zakat date: the date, the prices on that date, and the quantity of every holding in its own unit (SAR amount, USD amount, grams, shares, a plot).
 - A checkpoint is a `draft` until the user **finalises** it. Finalising freezes the settings used, the prices and the computed due amount, so changing settings later never rewrites history. A finalised checkpoint can be reopened to a draft deliberately (with a warning if it has payments).
-- **Year rule: everything held on zakat day** (default). Every zakatable holding on the checkpoint date counts, including money that arrived during the year, provided nisab was held at the previous zakat date. This is the Hanafi position; the other schools accept it as paying the newer money's zakat early (IslamQA 50801, Standing Committee). Valid in every school, so it is the default.
+- **Year rule: everything held on zakat day** (default). Every zakatable holding on the checkpoint date counts, including money that arrived during the year, provided nisab was held at the previous zakat date (taken from the previous checkpoint's result; asked once on the first checkpoint). This is the Hanafi position; the other schools accept it as paying the newer money's zakat early (IslamQA 50801, Standing Committee). Valid in every school, so it is the default.
 - **Year rule: lowest combined balance** (option). The zakatable base is the lowest total of all zakatable wealth at any point in the year (MUIS Singapore, TAIB Brunei; fits the Shafi'i/Maliki/Hanbali view). The app pre-fills an estimate: the lower of last checkpoint's holdings and this checkpoint's holdings, **both valued at this checkpoint's prices** (holdings closed during the year use last checkpoint's value). The user can lower it from statements. The true lowest balance can never exceed this estimate, so the estimate never under-counts against this method. Transfers between banks, currency changes and buying gold with cash cancel out because the comparison is on combined totals, not per holding. If the total dipped below nisab during the year, the user marks it and the year restarts (nothing due this checkpoint).
 - **First checkpoint** (no previous one): for the lowest-balance rule the user enters last zakat date's total (or holdings) or the lowest balance directly; for the default rule, a yes/no "did you hold at least nisab at your last zakat date?".
 - **Gaps and uneven spacing**: a checkpoint compares with the latest earlier checkpoint. If the gap is noticeably more or less than a year (lunar or solar per settings), warn and offer to add the missing year. Past years can be entered after the fact.
-- Holdings keep a stable identity across years; a new year copies the last checkpoint forward. Holdings can be added and closed.
+- Holdings keep a stable identity across years (name, kind, currency); a new year copies the last checkpoint forward. Holdings can be added and closed. Per-year facts live on the checkpoint entry, not the holding: quantity and classification (for sale, collectable, trading vs long-term, personal jewellery, company pays zakat), so reopening an earlier year never changes it.
 - Nisab is checked against the total qualifying zakatable value on the checkpoint date. Below nisab: nothing due, and the screen says why.
 
 ### Payments
 
 - A payment: date, recipient (reusable list), amount and currency sent, the base-currency value on the payment date, optional note.
-- Each payment belongs to one checkpoint; the checkpoint shows due, paid, remaining and becomes settled when remaining reaches zero (overpayment shown as such).
+- Each payment belongs to one checkpoint; the checkpoint shows due, paid, remaining and becomes settled when remaining reaches zero (overpayment shown as such). A year with nothing due shows as nothing due, with the reason.
 - **Advance payments**: logged against "next zakat" before its checkpoint exists, attached when that checkpoint is finalised. Only allowed once the user holds nisab (agreed condition, al-Mughni 2/260).
 - Unpaid zakat from an earlier year can be deducted from the next year's base (setting, on by default; NZF, Hanafi sources).
 - Unpaid amounts stay on their own year. Opening a new checkpoint warns if an earlier year has a balance.
@@ -119,6 +119,7 @@ Sources retrieved during design (2026-11-17):
 
 - Vite, React, TypeScript (strict), zod, Vitest, ESLint with autofix, Prettier. One Playwright smoke test: create, fill a checkpoint, save, reopen, numbers match, in English and Arabic.
 - Installable and offline (service worker / PWA).
+- Self-hosted or system fonts only; strict CSP (`default-src 'self'`) via `_headers`, so the no-third-party promise is enforced by the browser.
 
 ### Look and feel
 
