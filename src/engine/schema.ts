@@ -1,6 +1,9 @@
 import { z } from 'zod';
 import { Dec } from './money';
 
+// The site's CSP forbids eval; stop zod probing for it (it would fall back anyway, but log a violation).
+z.config({ jitless: true });
+
 // ---------- primitives ----------
 
 /** Non-negative decimal written as a string: "95000", "3.75". No grouping, no exponent. */
