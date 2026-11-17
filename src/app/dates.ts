@@ -73,3 +73,8 @@ export function hijriToIso(year: number, month: number, day: number): string | n
   }
   return null;
 }
+
+/** The year a zakat checkpoint is named by: its Hijri year, or Gregorian when dates are shown that way. */
+export function yearLabel(iso: string, display: DateDisplay): string {
+  return display === 'gregorian' ? iso.slice(0, 4) : String(hijriParts(iso).year);
+}

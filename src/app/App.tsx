@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Locale } from './dates';
+import { CheckpointFlow } from './checkpoint/CheckpointFlow';
+import { startCheckpoint } from './checkpoint/draft';
 import { FirstRun } from './firstRun/FirstRun';
 import { Header } from './Header';
 import { Home } from './home/Home';
@@ -7,7 +9,7 @@ import { applyDocumentLocale } from './i18n';
 import { LocaleContext, useT } from './i18n/locale';
 import { Prompts } from './Prompts';
 import { SettingsScreen } from './settings/SettingsScreen';
-import { useSession } from './storage/sessionContext';
+import { useOpenProfile, useSession } from './storage/sessionContext';
 import { Unlock } from './Unlock';
 import type { View } from './view';
 
@@ -37,16 +39,35 @@ function ErrorScreen({ message }: { message: string }) {
 }
 
 function OpenApp() {
+  const { profile, update } = useOpenProfile();
   const [view, setView] = useState<View>({ kind: 'home' });
   const home = () => {
     setView({ kind: 'home' });
+  };
+  const startYear = () => {
+    const draft = profile.checkpoints.find((c) => c.status === 'draft');
+    if (draft) {
+      setView({ kind: 'checkpoint', checkpointId: draft.id });
+      return;
+    }
+    const id = crypto.randomUUID();
+    update((p) => startCheckpoint(p, id, new Date().toISOString().slice(0, 10)));
+    setView({ kind: 'checkpoint', checkpointId: id });
   };
   let screen;
   switch (view.kind) {
     case 'home':
     case 'year':
+      screen = <Home onStart={startYear} />;
+      break;
     case 'checkpoint':
-      screen = <Home onStart={home} />;
+      screen = (
+        <CheckpointFlow
+          key={view.checkpointId}
+          checkpointId={view.checkpointId}
+          review={(back) => <ReviewPlaceholder back={back} />}
+        />
+      );
       break;
     case 'settings':
       screen = <SettingsScreen onDone={home} />;
@@ -61,6 +82,17 @@ function OpenApp() {
       />
       {screen}
     </>
+  );
+}
+
+function ReviewPlaceholder({ back }: { back: () => void }) {
+  const t = useT();
+  return (
+    <div className="actions">
+      <button className="btn quiet" type="button" onClick={back}>
+        {t.checkpoint.backToHoldings}
+      </button>
+    </div>
   );
 }
 
