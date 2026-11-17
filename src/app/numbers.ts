@@ -7,7 +7,8 @@ for (let i = 0; i < 10; i++) {
   DIGIT_MAP[String.fromCharCode(0x06f0 + i)] = String(i); // Extended Arabic-Indic (Persian/Urdu)
 }
 
-const GROUPED = /^\d{1,3}(,\d{3})+$/;
+const GROUPED = /^[1-9]\d{0,2}(,\d{3})+$/;
+const MAX_DECIMALS = 18;
 const PLAIN = /^\d+$/;
 
 /**
@@ -24,7 +25,7 @@ export function parseAmountInput(text: string): { ok: true; value: string } | { 
   const parts = normalised.split('.');
   if (parts.length > 2) return { ok: false };
   const [whole = '', frac] = parts;
-  if (frac !== undefined && !PLAIN.test(frac)) return { ok: false };
+  if (frac !== undefined && (!PLAIN.test(frac) || frac.length > MAX_DECIMALS)) return { ok: false };
   if (!PLAIN.test(whole) && !GROUPED.test(whole)) return { ok: false };
   const digits = whole.replace(/,/g, '');
   return { ok: true, value: frac === undefined ? digits : `${digits}.${frac}` };

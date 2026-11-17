@@ -3,6 +3,11 @@ import type { Messages } from './en';
 export const ar: Messages = {
   appName: 'مساعد الزكاة',
   common: {
+    dismiss: 'إخفاء',
+    changeRefused: 'لم يُحفظ هذا التغيير لأنه سيجعل ملفك غير قابل للقراءة:',
+    saveFallback:
+      'تعذّر الحفظ في الملف نفسه (ربما نُقل أو لم يعد القرص متصلًا). حُفظت نسخة جديدة بدلًا منه.',
+    copyFailed: 'لم يستطع هذا المتصفح الاحتفاظ بنسخته. احفظ ملفك الآن حتى لا يضيع شيء.',
     openFile: 'افتح ملفًا',
     save: 'احفظ الملف',
     cancel: 'إلغاء',
@@ -55,6 +60,10 @@ export const ar: Messages = {
     deleteTitle: 'حذف هذه الدفعة؟',
     deleteBody: (amount: string, name: string) => `ستُحذف دفعة ${amount} إلى ${name}.`,
     deleteConfirm: 'احذف الدفعة',
+    discard: 'احذف هذه المسودة',
+    discardTitle: 'حذف هذه المسودة؟',
+    discardBody: 'ستُحذف المسودة وأرقامها. الأعوام المنتهية لن تتأثر.',
+    discardConfirm: 'احذف المسودة',
   },
   payment: {
     title: 'أضف دفعة',
@@ -143,6 +152,9 @@ export const ar: Messages = {
     addCurrency: 'العملة',
     add: 'أضف',
     invalidAmount: 'استخدم الأرقام، مع نقطة للكسور، مثل 12,345.50',
+    outOfRange: 'أدخل رقمًا من 0 إلى 1، مثل 0.25.',
+    dateTaken: 'هذا التاريخ مستخدم لعام زكاة آخر.',
+    readAs: (v: string) => `قُرئ: ${v}`,
     toHoldings: 'تابع إلى ما تملكه',
     toReview: 'تابع إلى المراجعة',
     toPrices: 'ارجع إلى التاريخ والأسعار',
@@ -186,7 +198,11 @@ export const ar: Messages = {
       'تنطبق التغييرات على الأعوام التي لم تنهِها. الأعوام المنتهية تبقى بالإعدادات التي حُسبت بها.',
     language: 'اللغة',
     dateDisplay: { title: 'التواريخ', hijri: 'هجري', gregorian: 'ميلادي', both: 'هجري وميلادي' },
-    baseCurrency: { title: 'العملة الأساسية', detail: 'تُحسب زكاتك بهذه العملة.' },
+    baseCurrency: {
+      title: 'العملة الأساسية',
+      detail: 'تُحسب زكاتك بهذه العملة.',
+      locked: 'تُثبَّت بعد أول عام زكاة، حتى تُحسب كل الأعوام بالعملة نفسها.',
+    },
     yearRule: {
       title: 'ما الذي يُحسب لهذا العام',
       'whole-balance': {
@@ -263,6 +279,7 @@ export const ar: Messages = {
     intro: 'النسخة الموجودة في هذا المتصفح محمية بكلمة مرور.',
     button: 'افتح',
     wrong: 'كلمة المرور هذه لا تفتح الملف. تحقق منها وحاول مرة أخرى.',
+    openOther: 'افتح ملفًا آخر',
   },
   prompts: {
     passphraseTitle: 'هذا الملف محمي بكلمة مرور',
@@ -278,6 +295,15 @@ export const ar: Messages = {
   error: {
     title: 'حدث خطأ',
     reload: 'أعد تحميل الصفحة',
+    newerVersion:
+      'حُفظت النسخة الموجودة في هذا المتصفح بإصدار أحدث من مساعد الزكاة. أعد تحميل الصفحة لتحديث التطبيق.',
+    unreadable: 'تعذّرت قراءة النسخة الموجودة في هذا المتصفح.',
+    downloadCopy: 'نزّل النسخة الموجودة في هذا المتصفح',
+    openFile: 'افتح ملفًا',
+    startOver: 'ابدأ من جديد',
+    startOverTitle: 'البدء من جديد؟',
+    startOverBody: 'سيُحذف ما يحتفظ به هذا المتصفح. الملفات التي حفظتها لن تتأثر.',
+    startOverConfirm: 'احذف وابدأ من جديد',
   },
   notAFatwa: 'هذه حاسبة وليست فتوى.',
   lineReason: {
@@ -307,6 +333,7 @@ export const ar: Messages = {
     fx: (currency: string) => `أدخل سعر صرف ${currency} اليوم.`,
     'metal-price': (metal: 'gold' | 'silver') =>
       `أدخل سعر غرام ${metal === 'gold' ? 'الذهب' : 'الفضة'} الخالص اليوم.`,
+    'previous-incomplete': (year: string) => `أنهِ زكاة عام ${year} أولًا، فما زالت تنقصها أرقام.`,
     'first-year-answer': 'أجب: هل كنت تملك النصاب في تاريخ زكاتك الأخير؟',
   },
 };

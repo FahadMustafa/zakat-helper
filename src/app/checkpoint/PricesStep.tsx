@@ -103,6 +103,9 @@ export function PricesStep({
     update((p) => updateCheckpoint(p, checkpoint.id, f));
   };
   const base = checkpoint.baseCurrency;
+  const [dateTaken, setDateTaken] = useState(false);
+  const taken = (date: string) =>
+    profile.checkpoints.some((c) => c.id !== checkpoint.id && c.date === date);
 
   return (
     <div className="stack">
@@ -112,17 +115,27 @@ export function PricesStep({
           id="cp-date"
           type="date"
           value={checkpoint.date}
+          aria-invalid={dateTaken}
           onChange={(e) => {
-            if (e.target.value) change((c) => ({ ...c, date: e.target.value }));
+            const date = e.target.value;
+            if (!date) return;
+            setDateTaken(taken(date));
+            if (!taken(date)) change((c) => ({ ...c, date }));
           }}
         />
         <small className="hint">{formatDate(checkpoint.date, 'both', locale)}</small>
+        {dateTaken && (
+          <small className="error-text" role="alert">
+            {t.dateTaken}
+          </small>
+        )}
       </div>
       <HijriEntry
         key={checkpoint.date}
         iso={checkpoint.date}
         onDate={(date) => {
-          change((c) => ({ ...c, date }));
+          setDateTaken(taken(date));
+          if (!taken(date)) change((c) => ({ ...c, date }));
         }}
       />
 

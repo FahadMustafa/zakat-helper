@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Mark } from './components/Mark';
+import { StartOver } from './components/StartOver';
 import { useT } from './i18n/locale';
 import { useSession } from './storage/sessionContext';
 
 export function Unlock({ error }: { error?: 'wrong-passphrase' }) {
   const t = useT();
-  const { unlock } = useSession();
+  const { unlock, openFromDisk } = useSession();
   const [value, setValue] = useState('');
   const [busy, setBusy] = useState(false);
   return (
@@ -47,6 +48,10 @@ export function Unlock({ error }: { error?: 'wrong-passphrase' }) {
           <button className="btn" type="submit" disabled={busy || value.length === 0}>
             {t.unlock.button}
           </button>
+          <button className="btn quiet" type="button" onClick={() => void openFromDisk()}>
+            {t.unlock.openOther}
+          </button>
+          <StartOver />
         </div>
       </form>
     </main>

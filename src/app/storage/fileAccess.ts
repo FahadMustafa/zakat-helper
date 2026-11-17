@@ -46,13 +46,19 @@ export async function pickFile(): Promise<PickedFile | null> {
   }
 }
 
-function download(text: string, name: string): void {
+/** Save through the browser's downloads. Never throws for a cancelled picker; works everywhere. */
+export function downloadText(text: string, name: string): void {
   const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
   const a = document.createElement('a');
   a.href = url;
   a.download = name;
+  document.body.append(a);
   a.click();
-  URL.revokeObjectURL(url);
+  a.remove();
+  // Revoking straight after click() can cancel the download in Safari; give it time to start.
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, 60_000);
 }
 
 async function writeTo(handle: FileSystemFileHandle, text: string): Promise<void> {
@@ -83,7 +89,7 @@ export async function saveFile(
       await writeTo(h, text);
       return { name: h.name, handle: h };
     }
-    download(text, name);
+    downloadText(text, name);
     return { name };
   } catch (err) {
     if (isAbort(err)) return null;

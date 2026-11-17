@@ -22,6 +22,7 @@ export function SettingsScreen({ onDone }: { onDone: () => void }) {
       <p>{t.settings.intro}</p>
       <p className="note">{t.settings.frozenNote}</p>
       <SettingsForm
+        currencyLocked={profile.checkpoints.length > 0}
         value={profile.settings}
         onChange={(settings) => {
           update((p) => ({ ...p, settings }));

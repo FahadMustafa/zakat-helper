@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { reopenCheckpoint, yearStatus } from '../../engine/ledger';
+import { discardDraft } from '../checkpoint/draft';
 import { Breakdown, SettingsUsed } from '../checkpoint/Review';
 import { Confirm } from '../components/Confirm';
 import { formatDate, yearLabel } from '../dates';
@@ -10,7 +11,15 @@ import { removePayment } from '../payments/payments';
 import { useOpenProfile } from '../storage/sessionContext';
 import { YearFigures } from './YearSummary';
 
-export function YearPage({ checkpointId, onEdit }: { checkpointId: string; onEdit: () => void }) {
+export function YearPage({
+  checkpointId,
+  onEdit,
+  onDiscarded,
+}: {
+  checkpointId: string;
+  onEdit: () => void;
+  onDiscarded: () => void;
+}) {
   const t = useT();
   const locale = useLocale();
   const { profile, update, dirty } = useOpenProfile();
@@ -18,6 +27,7 @@ export function YearPage({ checkpointId, onEdit }: { checkpointId: string; onEdi
   const [notice, setNotice] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [confirmReopen, setConfirmReopen] = useState(false);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
   const checkpoint = profile.checkpoints.find((c) => c.id === checkpointId);
   if (!checkpoint) throw new Error(`Unknown checkpoint ${checkpointId}`);
   const status = yearStatus(profile, checkpointId);
@@ -50,6 +60,15 @@ export function YearPage({ checkpointId, onEdit }: { checkpointId: string; onEdi
         <div className="actions">
           <button className="btn" type="button" onClick={onEdit}>
             {t.year.continueDraft}
+          </button>
+          <button
+            className="btn quiet"
+            type="button"
+            onClick={() => {
+              setConfirmDiscard(true);
+            }}
+          >
+            {t.year.discard}
           </button>
         </div>
       )}
@@ -161,6 +180,22 @@ export function YearPage({ checkpointId, onEdit }: { checkpointId: string; onEdi
               nameOf(toDelete.recipientId),
             )}
           </p>
+        </Confirm>
+      )}
+      {confirmDiscard && (
+        <Confirm
+          title={t.year.discardTitle}
+          confirmLabel={t.year.discardConfirm}
+          onCancel={() => {
+            setConfirmDiscard(false);
+          }}
+          onConfirm={() => {
+            setConfirmDiscard(false);
+            onDiscarded();
+            update((p) => discardDraft(p, checkpointId));
+          }}
+        >
+          <p>{t.year.discardBody}</p>
         </Confirm>
       )}
       {confirmReopen && (

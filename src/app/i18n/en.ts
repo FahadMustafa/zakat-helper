@@ -5,6 +5,11 @@ type MissingKind = Missing['kind'];
 export const en = {
   appName: 'Zakat Helper',
   common: {
+    dismiss: 'Dismiss',
+    changeRefused: 'That change was not kept because it would make your file unreadable:',
+    saveFallback:
+      'Could not save to the same file (it may have moved or its drive is missing). A new copy was saved instead.',
+    copyFailed: 'This browser could not keep its copy. Save your file now so nothing is lost.',
     openFile: 'Open a file',
     save: 'Save file',
     cancel: 'Cancel',
@@ -61,6 +66,10 @@ export const en = {
     deleteTitle: 'Delete this payment?',
     deleteBody: (amount: string, name: string) => `${amount} to ${name} will be removed.`,
     deleteConfirm: 'Delete payment',
+    discard: 'Discard this draft',
+    discardTitle: 'Discard this draft?',
+    discardBody: 'The draft and its figures are removed. Finished years are not touched.',
+    discardConfirm: 'Discard draft',
   },
   payment: {
     title: 'Add a payment',
@@ -149,6 +158,9 @@ export const en = {
     addCurrency: 'Currency',
     add: 'Add',
     invalidAmount: 'Use digits, with a dot for decimals, like 12,345.50',
+    outOfRange: 'Enter a number from 0 to 1, for example 0.25.',
+    dateTaken: 'Another zakat year already uses this date.',
+    readAs: (v: string) => `Read as ${v}`,
     toHoldings: 'Continue to what you hold',
     toReview: 'Continue to review',
     toPrices: 'Back to date and prices',
@@ -200,7 +212,11 @@ export const en = {
       gregorian: 'Gregorian',
       both: 'Hijri and Gregorian',
     },
-    baseCurrency: { title: 'Main currency', detail: 'Your zakat is worked out in this currency.' },
+    baseCurrency: {
+      title: 'Main currency',
+      detail: 'Your zakat is worked out in this currency.',
+      locked: 'Fixed once you have a zakat year, so every year is worked out in the same currency.',
+    },
     yearRule: {
       title: 'What counts for this year',
       'whole-balance': {
@@ -284,6 +300,7 @@ export const en = {
     intro: 'The copy in this browser is protected by a passphrase.',
     button: 'Unlock',
     wrong: 'That passphrase does not open this file. Check it and try again.',
+    openOther: 'Open a different file',
   },
   prompts: {
     passphraseTitle: 'This file has a passphrase',
@@ -300,6 +317,15 @@ export const en = {
   error: {
     title: 'Something went wrong',
     reload: 'Reload the page',
+    newerVersion:
+      'The copy in this browser was saved by a newer version of Zakat Helper. Reload the page to update the app.',
+    unreadable: 'The copy in this browser cannot be read.',
+    downloadCopy: 'Download the copy in this browser',
+    openFile: 'Open a file',
+    startOver: 'Start over',
+    startOverTitle: 'Start over?',
+    startOverBody: 'This removes the copy kept in this browser. Files you saved are not touched.',
+    startOverConfirm: 'Remove and start over',
   },
   notAFatwa: 'This is a calculator, not a fatwa.',
   lineReason: {
@@ -330,6 +356,8 @@ export const en = {
     fx: (currency: string) => `Enter today's exchange rate for ${currency}.`,
     'metal-price': (metal: 'gold' | 'silver') =>
       `Enter today's price per gram of pure ${metal === 'gold' ? 'gold' : 'silver'}.`,
+    'previous-incomplete': (year: string) =>
+      `Finish the zakat year ${year} first; it is still missing figures.`,
     'first-year-answer': 'Answer whether you held at least nisab at your last zakat date.',
   } satisfies Record<MissingKind, unknown>,
 };

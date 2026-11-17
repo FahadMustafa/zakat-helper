@@ -70,11 +70,22 @@ export async function openFile(text: string, passphrase?: string): Promise<OpenR
     raw = inner.value;
   }
 
+  const read = readProfile(raw);
+  if (read.kind !== 'ok') return read;
+  return key ? { ...read, key } : read;
+}
+
+export type ReadResult =
+  | { kind: 'ok'; profile: Profile }
+  | { kind: 'invalid'; issues: string[] }
+  | { kind: 'newer-version'; version: number };
+
+/** Version check, migrations, then the schema. Used for files and for the browser's working copy. */
+export function readProfile(raw: unknown): ReadResult {
   const head = Versioned.safeParse(raw);
   if (!head.success) return { kind: 'invalid', issues: ['This is not a Zakat Helper file.'] };
   if (head.data.version > CURRENT_VERSION)
     return { kind: 'newer-version', version: head.data.version };
-
   let migrated: unknown;
   try {
     migrated = migrate(head.data);
@@ -82,8 +93,7 @@ export async function openFile(text: string, passphrase?: string): Promise<OpenR
     return { kind: 'invalid', issues: [err instanceof Error ? err.message : String(err)] };
   }
   const parsed = parseProfile(migrated);
-  if (!parsed.ok) return { kind: 'invalid', issues: parsed.issues };
-  return key
-    ? { kind: 'ok', profile: parsed.profile, key }
-    : { kind: 'ok', profile: parsed.profile };
+  return parsed.ok
+    ? { kind: 'ok', profile: parsed.profile }
+    : { kind: 'invalid', issues: parsed.issues };
 }

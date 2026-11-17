@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { deriveKey } from './crypto';
-import { openFile, serialise, stamp } from './file';
+import { openFile, readProfile, serialise, stamp } from './file';
 import { migrate } from './migrate';
 import { sampleProfile } from './testing/sample';
 
@@ -101,5 +101,25 @@ describe('migrate', () => {
 
   it('fails loudly when a step is missing', () => {
     expect(() => migrate({ version: 0 }, {})).toThrow(/version 0/);
+  });
+});
+
+describe('readProfile (shared by file open and the browser working copy)', () => {
+  it('refuses a newer version instead of throwing', () => {
+    expect(readProfile({ ...sampleProfile(), version: 2 })).toEqual({
+      kind: 'newer-version',
+      version: 2,
+    });
+  });
+
+  it('accepts the current version', () => {
+    expect(readProfile(JSON.parse(JSON.stringify(sampleProfile())))).toEqual({
+      kind: 'ok',
+      profile: sampleProfile(),
+    });
+  });
+
+  it('reports a damaged profile as invalid', () => {
+    expect(readProfile({ format: 'zakat-helper', version: 1 }).kind).toBe('invalid');
   });
 });

@@ -514,3 +514,41 @@ describe('missing inputs and warnings', () => {
     expect(() => computeCheckpoint(profile([]), 'nope')).toThrow(/nope/);
   });
 });
+
+describe('review fixes', () => {
+  it('asks to finish the previous year when it cannot be worked out, not the first-year question', () => {
+    const p = profile([
+      cp('y1', '2025-03-11', [cash('hsbc', '1000')], {
+        prices: { fx: {}, metalPerGramPure: { silver: '5' }, perHolding: {} },
+      }),
+      cp('y2', '2026-03-01', [cash('rajhi', '50000')], { heldNisabAtPrevious: undefined }),
+    ]);
+    expect(computeCheckpoint(p, 'y2')).toEqual({
+      ok: false,
+      missing: [{ kind: 'previous-incomplete', checkpointId: 'y1' }],
+    });
+  });
+
+  it('values a holding closed during the year at last checkpoint value even when another holding shares its currency', () => {
+    const usd2: Holding = { id: 'usd2', kind: 'cash', name: 'Second USD', currency: 'USD' };
+    let p = profile(
+      [
+        cp('y1', '2025-03-11', [
+          cash('hsbc', '10000'),
+          { kind: 'cash', holdingId: 'usd2', amount: '0' },
+        ]),
+        cp(
+          'y2',
+          '2026-03-01',
+          [{ kind: 'cash', holdingId: 'usd2', amount: '0' }, cash('rajhi', '100000')],
+          { prices: { ...PRICES, fx: { USD: '3' } } },
+        ),
+      ],
+      { yearRule: 'lowest-balance', deductUnpaidPriorZakat: false },
+    );
+    p = { ...p, holdings: [...p.holdings, usd2] };
+    p = freeze(p, 'y1');
+    // hsbc closed: last year 10,000 USD at 3.75 = 37,500, not revalued at 3.
+    expect(ok(p, 'y2').estimate).toBe('37500');
+  });
+});

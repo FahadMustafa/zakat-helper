@@ -6,6 +6,7 @@ import {
   addHolding,
   closeHolding,
   currenciesInUse,
+  discardDraft,
   insertMissingYear,
   metalsNeeded,
   startCheckpoint,
@@ -129,5 +130,16 @@ describe('insertMissingYear', () => {
     expect(gap?.date).toBe('2027-02-18');
     expect(gap?.entries).toEqual(sampleProfile().checkpoints[0]?.entries);
     expect(gap?.status).toBe('draft');
+  });
+});
+
+describe('discardDraft', () => {
+  it('removes a draft year', () => {
+    const p = startCheckpoint(finalisedSample(), 'n', '2026-11-17');
+    expect(discardDraft(p, 'n').checkpoints.map((c) => c.id)).toEqual(['cp-1447']);
+  });
+
+  it('refuses to discard a finished year', () => {
+    expect(() => discardDraft(finalisedSample(), 'cp-1447')).toThrow(/finished/);
   });
 });

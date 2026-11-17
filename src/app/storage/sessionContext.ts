@@ -6,7 +6,13 @@ export type Session =
   | { kind: 'welcome' }
   | { kind: 'locked'; error?: 'wrong-passphrase' }
   | { kind: 'open'; profile: Profile; dirty: boolean; encrypted: boolean; fileName?: string }
-  | { kind: 'error'; message: string };
+  | { kind: 'error'; reason: 'newer-version' | 'unreadable' | 'unexpected'; details: string };
+
+/** Something the user should know that does not stop the app. */
+export type Notice =
+  | { kind: 'change-refused'; issues: string[] }
+  | { kind: 'save-fallback' }
+  | { kind: 'copy-failed' };
 
 /** A dialog the user must answer before the app can go on. */
 export type Prompt =
@@ -17,6 +23,10 @@ export type Prompt =
 export type SessionApi = {
   session: Session;
   prompt: Prompt | null;
+  notice: Notice | null;
+  dismissNotice: () => void;
+  startOver: () => Promise<void>;
+  downloadBrowserCopy: () => Promise<void>;
   startNew: (settings: Settings) => void;
   openFromDisk: () => Promise<void>;
   submitFilePassphrase: (passphrase: string) => Promise<void>;

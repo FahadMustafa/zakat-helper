@@ -234,7 +234,7 @@ function dedupe(missing: Missing[]): Missing[] {
 
 /**
  * Previous checkpoint's holdings valued at THIS checkpoint's prices (lowest-balance estimate).
- * A holding that can't be valued now (closed, no price, no rate) keeps its value from the previous result.
+ * A holding no longer held, or one that can't be valued now, keeps its value from the previous result.
  */
 function previousValuedNow(
   p: Profile,
@@ -245,8 +245,13 @@ function previousValuedNow(
 ): Dec {
   let assets = Dec.ZERO;
   let debts = Dec.ZERO;
+  const heldNow = new Set(c.entries.map((e) => e.holdingId));
   for (const e of prev.entries) {
-    const r = valueEntry(e, findHolding(p, e.holdingId), c.baseCurrency, c.prices, s);
+    // Closed or no longer held: keep last checkpoint's value, so the result never depends on
+    // whether some other holding happens to share its currency or price.
+    const r = heldNow.has(e.holdingId)
+      ? valueEntry(e, findHolding(p, e.holdingId), c.baseCurrency, c.prices, s)
+      : ({ ok: false, missing: [] } as const);
     let zakatable: Dec;
     let isDebt: boolean;
     if (r.ok) {
@@ -288,6 +293,8 @@ export function computeCheckpoint(p: Profile, checkpointId: string): CheckpointR
   if (usablePrev) {
     heldNisabAtPrevious =
       Dec.parse(usablePrev.result.netTotal).cmp(Dec.parse(usablePrev.result.nisabThreshold)) >= 0;
+  } else if (prev) {
+    missing.push({ kind: 'previous-incomplete', checkpointId: prev.id });
   } else {
     heldNisabAtPrevious = c.heldNisabAtPrevious;
     if (heldNisabAtPrevious === undefined) missing.push({ kind: 'first-year-answer' });

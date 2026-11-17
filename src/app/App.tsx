@@ -11,7 +11,9 @@ import { applyDocumentLocale } from './i18n';
 import { LocaleContext, useT } from './i18n/locale';
 import { Prompts } from './Prompts';
 import { SettingsScreen } from './settings/SettingsScreen';
-import { useOpenProfile, useSession } from './storage/sessionContext';
+import { useOpenProfile, useSession, type Session } from './storage/sessionContext';
+import { StartOver } from './components/StartOver';
+import { Notices } from './Notices';
 import { Unlock } from './Unlock';
 import type { View } from './view';
 
@@ -19,12 +21,20 @@ function initialLocale(): Locale {
   return navigator.language.toLowerCase().startsWith('ar') ? 'ar' : 'en';
 }
 
-function ErrorScreen({ message }: { message: string }) {
+function ErrorScreen({ failure }: { failure: Extract<Session, { kind: 'error' }> }) {
   const t = useT();
+  const { openFromDisk, downloadBrowserCopy } = useSession();
+  const headline =
+    failure.reason === 'newer-version'
+      ? t.error.newerVersion
+      : failure.reason === 'unreadable'
+        ? t.error.unreadable
+        : t.error.title;
   return (
     <main className="screen">
       <h1>{t.error.title}</h1>
-      <p className="note warn-note">{message}</p>
+      <p className="note warn-note">{headline}</p>
+      {failure.details && <pre className="hint issues">{failure.details}</pre>}
       <div className="actions">
         <button
           className="btn"
@@ -35,6 +45,13 @@ function ErrorScreen({ message }: { message: string }) {
         >
           {t.error.reload}
         </button>
+        <button className="btn quiet" type="button" onClick={() => void downloadBrowserCopy()}>
+          {t.error.downloadCopy}
+        </button>
+        <button className="btn quiet" type="button" onClick={() => void openFromDisk()}>
+          {t.error.openFile}
+        </button>
+        <StartOver />
       </div>
     </main>
   );
@@ -73,6 +90,7 @@ function OpenApp() {
         <YearPage
           key={view.checkpointId}
           checkpointId={view.checkpointId}
+          onDiscarded={home}
           onEdit={() => {
             setView({ kind: 'checkpoint', checkpointId: view.checkpointId });
           }}
@@ -136,7 +154,7 @@ export function App() {
       body = <Unlock {...(session.error ? { error: session.error } : {})} />;
       break;
     case 'error':
-      body = <ErrorScreen message={session.message} />;
+      body = <ErrorScreen failure={session} />;
       break;
     case 'open':
       body = <OpenApp />;
@@ -144,7 +162,10 @@ export function App() {
 
   return (
     <LocaleContext value={locale}>
-      <div className="wrap">{body}</div>
+      <div className="wrap">
+        <Notices />
+        {body}
+      </div>
       <Prompts />
     </LocaleContext>
   );

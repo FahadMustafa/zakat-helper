@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 
 /** Force the download + <input type=file> path: Playwright cannot drive native file pickers. */
 export async function withoutFilePickers(page: Page): Promise<void> {
@@ -36,14 +36,11 @@ export async function openFromDisk(
   await (await chooser).setFiles(path);
 }
 
-/** Wait until the app has written its working copy to IndexedDB (writes are async after each change). */
-export async function waitForWorkingCopy(
-  page: Page,
-  kind: 'plain' | 'encrypted' = 'plain',
-): Promise<void> {
-  await page.waitForFunction(
-    (wanted) =>
-      new Promise<boolean>((resolve) => {
+/** The kind of working copy in IndexedDB right now ('plain', 'encrypted'), or undefined. */
+async function workingCopyKind(page: Page): Promise<string | undefined> {
+  return page.evaluate(
+    () =>
+      new Promise<string | undefined>((resolve) => {
         type Req = {
           result: unknown;
           onsuccess: (() => void) | null;
@@ -58,26 +55,36 @@ export async function waitForWorkingCopy(
           .indexedDB;
         const open = idb.open('zakat-helper');
         open.onerror = () => {
-          resolve(false);
+          resolve(undefined);
         };
         open.onsuccess = () => {
           const db = open.result as Db;
           if (!db.objectStoreNames.contains('kv')) {
             db.close();
-            resolve(false);
+            resolve(undefined);
             return;
           }
           const get = db.transaction('kv').objectStore('kv').get('working-copy');
           get.onsuccess = () => {
             db.close();
-            resolve((get.result as { kind?: string } | undefined)?.kind === wanted);
+            resolve((get.result as { kind?: string } | undefined)?.kind);
           };
           get.onerror = () => {
             db.close();
-            resolve(false);
+            resolve(undefined);
           };
         };
       }),
-    kind,
   );
+}
+
+/**
+ * Wait until the app has written its working copy (writes are async after each change).
+ * page.waitForFunction does not await a returned promise, so poll page.evaluate instead.
+ */
+export async function waitForWorkingCopy(
+  page: Page,
+  kind: 'plain' | 'encrypted' = 'plain',
+): Promise<void> {
+  await expect.poll(() => workingCopyKind(page), { timeout: 15_000 }).toBe(kind);
 }

@@ -3,6 +3,7 @@ import { finaliseCheckpoint } from '../../engine/ledger';
 import { Dec } from '../../engine/money';
 import type { Checkpoint, Missing, OkResult, Profile, Settings } from '../../engine/schema';
 import { AmountInput } from '../components/AmountInput';
+import { yearLabel } from '../dates';
 import { useLocale, useT } from '../i18n/locale';
 import type { Messages } from '../i18n';
 import { formatAmount, percent } from '../numbers';
@@ -21,6 +22,12 @@ function missingText(t: Messages, m: Missing, profile: Profile): string {
       return t.missing['metal-price'](m.metal);
     case 'first-year-answer':
       return t.missing['first-year-answer'];
+    case 'previous-incomplete': {
+      const c = profile.checkpoints.find((x) => x.id === m.checkpointId);
+      return t.missing['previous-incomplete'](
+        c ? yearLabel(c.date, profile.settings.dateDisplay) : m.checkpointId,
+      );
+    }
   }
 }
 

@@ -7,9 +7,14 @@ z.config({ jitless: true });
 // ---------- primitives ----------
 
 /** Non-negative decimal written as a string: "95000", "3.75". No grouping, no exponent. */
-export const Amount = z.string().regex(/^\d+(\.\d+)?$/, 'expected a non-negative decimal string');
+export const Amount = z
+  .string()
+  .regex(
+    /^\d+(\.\d{1,18})?$/,
+    'expected a non-negative decimal string with at most 18 decimal places',
+  );
 /** Signed decimal string, for computed results that may be negative (e.g. net totals). */
-export const SignedAmount = z.string().regex(/^-?\d+(\.\d+)?$/, 'expected a decimal string');
+export const SignedAmount = z.string().regex(/^-?\d+(\.\d{1,18})?$/, 'expected a decimal string');
 export const Currency = z.string().regex(/^[A-Z]{3}$/, 'expected an ISO 4217 code like SAR');
 export const IsoDate = z.iso.date();
 const Id = z.string().min(1);
@@ -141,6 +146,8 @@ export const Missing = z.discriminatedUnion('kind', [
   z.strictObject({ kind: z.literal('fx'), currency: Currency }),
   z.strictObject({ kind: z.literal('metal-price'), metal: z.enum(['gold', 'silver']) }),
   z.strictObject({ kind: z.literal('first-year-answer') }),
+  /** The checkpoint before this one cannot be worked out yet; finish it first. */
+  z.strictObject({ kind: z.literal('previous-incomplete'), checkpointId: Id }),
 ]);
 export type Missing = z.infer<typeof Missing>;
 
@@ -265,6 +272,15 @@ export const Profile = z
       }
       holdings.set(h.id, h);
     });
+
+    const bases = new Set(p.checkpoints.map((c) => c.baseCurrency));
+    if (bases.size > 1) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['checkpoints'],
+        message: `all years must use one base currency, found ${[...bases].join(', ')}`,
+      });
+    }
 
     const checkpointIds = new Set<string>();
     const dates = new Set<string>();

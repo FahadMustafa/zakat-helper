@@ -182,3 +182,17 @@ describe('canPayInAdvance', () => {
     expect(canPayInAdvance(finalise(profile([cp('y', '2026-03-01', '1000')]), 'y'))).toBe(false);
   });
 });
+
+describe('advance payments and nothing-due years', () => {
+  it('leaves advance payments as advance when the finished year has nothing due', () => {
+    let p = profile([cp('y1', '2025-03-11', '100000')]);
+    p = finalise(p, 'y1');
+    p = {
+      ...p,
+      checkpoints: [...p.checkpoints, cp('y2', '2026-03-01', '1000')],
+      payments: [pay('adv', '500', { kind: 'advance' }, '2025-12-01')],
+    };
+    p = finalise(p, 'y2');
+    expect(p.payments[0]?.appliesTo).toEqual({ kind: 'advance' });
+  });
+});

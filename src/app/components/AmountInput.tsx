@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useT } from '../i18n/locale';
+import { Dec } from '../../engine/money';
 import { parseAmountInput } from '../numbers';
 
 /**
@@ -13,6 +14,7 @@ export function AmountInput({
   onCommit,
   hint,
   hideLabel = false,
+  max,
 }: {
   id: string;
   label: string;
@@ -20,10 +22,14 @@ export function AmountInput({
   onCommit: (v: string | undefined) => void;
   hint?: string;
   hideLabel?: boolean;
+  /** Inclusive upper bound, as a decimal string. */
+  max?: string;
 }) {
   const t = useT();
   const [text, setText] = useState(value ?? '');
-  const [invalid, setInvalid] = useState(false);
+  const [problem, setProblem] = useState<'format' | 'range' | null>(null);
+  const [readAs, setReadAs] = useState<string | null>(null);
+  const invalid = problem !== null;
   const errorId = `${id}-error`;
   return (
     <div className="field">
@@ -43,19 +49,33 @@ export function AmountInput({
           const next = e.target.value;
           setText(next);
           if (next.trim() === '') {
-            setInvalid(false);
+            setProblem(null);
+            setReadAs(null);
             onCommit(undefined);
             return;
           }
           const r = parseAmountInput(next);
-          setInvalid(!r.ok);
-          if (r.ok) onCommit(r.value);
+          if (!r.ok) {
+            setProblem('format');
+            setReadAs(null);
+            return;
+          }
+          if (max !== undefined && Dec.parse(r.value).cmp(Dec.parse(max)) > 0) {
+            setProblem('range');
+            setReadAs(null);
+            return;
+          }
+          setProblem(null);
+          // Echo how a grouped or non-Western number was read, so 15.000 meaning fifteen thousand is caught.
+          setReadAs(/^[\d.]+$/.test(next.trim()) ? null : r.value);
+          onCommit(r.value);
         }}
       />
       {hint && !invalid && <small className="hint">{hint}</small>}
+      {readAs !== null && <small className="hint">{t.checkpoint.readAs(readAs)}</small>}
       {invalid && (
         <small id={errorId} className="error-text">
-          {t.checkpoint.invalidAmount}
+          {problem === 'range' ? t.checkpoint.outOfRange : t.checkpoint.invalidAmount}
         </small>
       )}
     </div>

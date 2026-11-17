@@ -85,4 +85,20 @@ describe('parseProfile', () => {
   it('rejects unknown top-level keys', () => {
     expectIssue({ ...sampleProfile(), extra: 1 }, 'extra');
   });
+
+  it('rejects amounts with more than 18 decimal places (the engine cannot hold them)', () => {
+    const p = sampleProfile();
+    const e = p.checkpoints[0]?.entries[0];
+    if (e?.kind !== 'cash') throw new Error('fixture changed');
+    e.amount = '1.0000000000000000001';
+    expectIssue(p, 'amount');
+  });
+
+  it('rejects checkpoints in different base currencies', () => {
+    const p = sampleProfile();
+    const c = p.checkpoints[0];
+    if (!c) throw new Error('fixture changed');
+    p.checkpoints.push({ ...c, id: 'cp-2', date: '2027-02-18', baseCurrency: 'GBP' });
+    expectIssue(p, 'base currency');
+  });
 });

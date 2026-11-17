@@ -1,11 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { decrypt, deriveKey, encrypt, fromBase64, type SessionKey } from '../../engine/crypto';
-import { openFile, serialise, stamp } from '../../engine/file';
-import { CURRENT_VERSION, parseProfile, type Profile, type Settings } from '../../engine/schema';
+import { openFile, readProfile, serialise, stamp } from '../../engine/file';
+import { CURRENT_VERSION, type Profile, type Settings } from '../../engine/schema';
+import { applyChange } from './applyChange';
 import { decideOpen } from './conflict';
-import { pickFile, saveFile, type PickedFile } from './fileAccess';
-import { SessionContext, type Prompt, type Session, type SessionApi } from './sessionContext';
+import { downloadText, pickFile, saveFile, type PickedFile } from './fileAccess';
 import {
+  SessionContext,
+  type Notice,
+  type Prompt,
+  type Session,
+  type SessionApi,
+} from './sessionContext';
+import {
+  clearCopy,
   loadCopy,
   loadHandle,
   requestPersistence,
@@ -16,6 +24,7 @@ import {
 
 type Open = { profile: Profile; dirty: boolean; key?: SessionKey; fileName?: string };
 type Pending = { picked: PickedFile; profile?: Profile; key?: SessionKey };
+type Failure = Extract<Session, { kind: 'error' }>;
 
 function newProfile(settings: Settings): Profile {
   return {
@@ -34,24 +43,64 @@ function suggestedName(): string {
   return `zakat-${new Date().getFullYear()}.json`;
 }
 
+function messageOf(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
 export function SessionProvider({ children }: { children: ReactNode }) {
-  const [open, setOpen] = useState<Open | null>(null);
+  const [open, setOpenState] = useState<Open | null>(null);
+  // The latest open profile, readable from async callbacks without stale closures.
+  const openRef = useRef<Open | null>(null);
   const [status, setStatus] = useState<'loading' | 'welcome' | 'locked' | 'open' | 'error'>(
     'loading',
   );
+  const [failure, setFailure] = useState<Failure>({
+    kind: 'error',
+    reason: 'unexpected',
+    details: '',
+  });
   const [lockedCopy, setLockedCopy] = useState<Extract<StoredCopy, { kind: 'encrypted' }> | null>(
     null,
   );
   const [lockError, setLockError] = useState<'wrong-passphrase' | undefined>();
-  const [errorMessage, setErrorMessage] = useState('');
   const [prompt, setPrompt] = useState<Prompt | null>(null);
+  const [notice, setNotice] = useState<Notice | null>(null);
   const pending = useRef<Pending | null>(null);
   const handle = useRef<FileSystemFileHandle | undefined>(undefined);
 
-  const fail = useCallback((err: unknown) => {
-    setErrorMessage(err instanceof Error ? err.message : String(err));
+  const setOpen = useCallback((next: Open | null) => {
+    openRef.current = next;
+    setOpenState(next);
+  }, []);
+
+  const failWith = useCallback((reason: Failure['reason'], details: string) => {
+    setFailure({ kind: 'error', reason, details });
     setStatus('error');
   }, []);
+
+  /** Open a profile read from the browser's copy, or show a recoverable error. */
+  const openFromCopy = useCallback(
+    (raw: unknown, copy: StoredCopy, key?: SessionKey) => {
+      const r = readProfile(raw);
+      switch (r.kind) {
+        case 'ok':
+          setOpen({
+            profile: r.profile,
+            dirty: copy.dirty,
+            ...(key ? { key } : {}),
+            ...(copy.fileName ? { fileName: copy.fileName } : {}),
+          });
+          setStatus('open');
+          return;
+        case 'newer-version':
+          failWith('newer-version', `format ${r.version}`);
+          return;
+        case 'invalid':
+          failWith('unreadable', r.issues.join('\n'));
+      }
+    },
+    [setOpen, failWith],
+  );
 
   // Load the working copy once.
   useEffect(() => {
@@ -68,21 +117,14 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         setStatus('locked');
         return;
       }
-      const parsed = parseProfile(copy.profile);
-      if (!parsed.ok)
-        throw new Error(
-          `The copy saved in this browser cannot be read: ${parsed.issues.join('; ')}`,
-        );
-      setOpen({
-        profile: parsed.profile,
-        dirty: copy.dirty,
-        ...(copy.fileName ? { fileName: copy.fileName } : {}),
-      });
-      setStatus('open');
-    })().catch(fail);
-  }, [fail]);
+      openFromCopy(copy.profile, copy);
+    })().catch((err: unknown) => {
+      failWith('unexpected', messageOf(err));
+    });
+  }, [openFromCopy, failWith]);
 
   // Keep the working copy in step with every change (encrypted when the profile is).
+  // A failure here must not stop the app: the profile is still in memory and can be saved to a file.
   useEffect(() => {
     if (!open) return;
     void (async () => {
@@ -99,8 +141,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           }
         : { ...base, kind: 'plain', profile: open.profile };
       await saveCopy(copy);
-    })().catch(fail);
-  }, [open, fail]);
+    })().catch(() => {
+      setNotice({ kind: 'copy-failed' });
+    });
+  }, [open]);
 
   // Warn before leaving with unsaved changes.
   useEffect(() => {
@@ -114,25 +158,31 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     };
   }, [open?.dirty]);
 
-  const adopt = useCallback((p: Pending) => {
-    if (!p.profile) return;
-    handle.current = p.picked.handle;
-    void saveHandle(p.picked.handle ?? null);
-    setOpen({
-      profile: p.profile,
-      dirty: false,
-      fileName: p.picked.name,
-      ...(p.key ? { key: p.key } : {}),
-    });
-    setStatus('open');
-    setPrompt(null);
-    pending.current = null;
-  }, []);
+  const adopt = useCallback(
+    (p: Pending) => {
+      if (!p.profile) return;
+      handle.current = p.picked.handle;
+      void saveHandle(p.picked.handle ?? null).catch(() => undefined);
+      setOpen({
+        profile: p.profile,
+        dirty: false,
+        fileName: p.picked.name,
+        ...(p.key ? { key: p.key } : {}),
+      });
+      setLockedCopy(null);
+      setLockError(undefined);
+      setStatus('open');
+      setPrompt(null);
+      pending.current = null;
+    },
+    [setOpen],
+  );
 
   const decide = useCallback(
     (p: Pending & { profile: Profile }) => {
+      const current = openRef.current;
       const decision = decideOpen(
-        open ? { meta: open.profile.meta, dirty: open.dirty } : null,
+        current ? { meta: current.profile.meta, dirty: current.dirty } : null,
         p.profile.meta,
       );
       switch (decision) {
@@ -150,7 +200,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           });
       }
     },
-    [open, adopt],
+    [adopt],
   );
 
   const handleOpened = useCallback(
@@ -198,7 +248,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         session = lockError ? { kind: 'locked', error: lockError } : { kind: 'locked' };
         break;
       case 'error':
-        session = { kind: 'error', message: errorMessage };
+        session = failure;
         break;
       case 'open':
         session = open
@@ -215,6 +265,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     return {
       session,
       prompt,
+      notice,
+      dismissNotice: () => {
+        setNotice(null);
+      },
       startNew: (settings) => {
         setOpen({ profile: newProfile(settings), dirty: true });
         setStatus('open');
@@ -224,7 +278,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           const picked = await pickFile();
           if (picked) await handleOpened(picked);
         } catch (err) {
-          fail(err);
+          setPrompt({ kind: 'file-problem', fileName: '', issues: [messageOf(err)] });
         }
       },
       submitFilePassphrase: async (passphrase) => {
@@ -258,51 +312,97 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           setLockError('wrong-passphrase');
           return;
         }
-        const parsed = parseProfile(JSON.parse(text) as unknown);
-        if (!parsed.ok) {
-          fail(
-            new Error(`The copy saved in this browser cannot be read: ${parsed.issues.join('; ')}`),
-          );
+        let raw: unknown;
+        try {
+          raw = JSON.parse(text);
+        } catch {
+          failWith('unreadable', 'The decrypted copy is not valid JSON.');
           return;
         }
-        setOpen({
-          profile: parsed.profile,
-          dirty: lockedCopy.dirty,
-          key,
-          ...(lockedCopy.fileName ? { fileName: lockedCopy.fileName } : {}),
-        });
         setLockedCopy(null);
         setLockError(undefined);
-        setStatus('open');
+        openFromCopy(raw, lockedCopy, key);
       },
       update: (change) => {
-        setOpen((o) => (o ? { ...o, profile: change(o.profile), dirty: true } : o));
+        const current = openRef.current;
+        if (!current) return;
+        const r = applyChange(current.profile, change);
+        if (r.ok) setOpen({ ...current, profile: r.profile, dirty: true });
+        else setNotice({ kind: 'change-refused', issues: r.issues });
       },
       save: async () => {
-        if (!open) return;
+        const current = openRef.current;
+        if (!current) return;
+        const stamped = stamp(current.profile, new Date().toISOString());
+        const text = await serialise(stamped, current.key);
+        const name = current.fileName ?? suggestedName();
+        let saved: { name: string; handle?: FileSystemFileHandle } | null;
         try {
-          const stamped = stamp(open.profile, new Date().toISOString());
-          const text = await serialise(stamped, open.key);
-          const saved = await saveFile(text, open.fileName ?? suggestedName(), handle.current);
-          if (!saved) return;
-          handle.current = saved.handle;
-          await saveHandle(saved.handle ?? null);
-          setOpen({ ...open, profile: stamped, dirty: false, fileName: saved.name });
-        } catch (err) {
-          fail(err);
+          saved = await saveFile(text, name, handle.current);
+        } catch {
+          // The remembered file may have moved or its drive is gone. Forget it and save a new copy.
+          handle.current = undefined;
+          void saveHandle(null).catch(() => undefined);
+          try {
+            saved = await saveFile(text, name);
+          } catch {
+            downloadText(text, name);
+            saved = { name };
+          }
+          setNotice({ kind: 'save-fallback' });
         }
+        if (!saved) return;
+        handle.current = saved.handle;
+        void saveHandle(saved.handle ?? null).catch(() => undefined);
+        // Edits made while the save dialog was open stay unsaved.
+        const latest = openRef.current ?? current;
+        const unchanged = latest.profile === current.profile;
+        setOpen({
+          ...latest,
+          profile: { ...latest.profile, meta: stamped.meta },
+          dirty: !unchanged,
+          fileName: saved.name,
+        });
       },
       setPassphrase: async (passphrase) => {
-        if (!open) return;
-        const { key: _old, ...rest } = open;
-        setOpen(
-          passphrase
-            ? { ...rest, key: await deriveKey(passphrase), dirty: true }
-            : { ...rest, dirty: true },
-        );
+        if (!openRef.current) return;
+        const key = passphrase ? await deriveKey(passphrase) : undefined;
+        const latest = openRef.current;
+        const { key: _old, ...rest } = latest;
+        setOpen(key ? { ...rest, key, dirty: true } : { ...rest, dirty: true });
+      },
+      startOver: async () => {
+        await clearCopy().catch(() => undefined);
+        await saveHandle(null).catch(() => undefined);
+        handle.current = undefined;
+        setOpen(null);
+        setLockedCopy(null);
+        setLockError(undefined);
+        setNotice(null);
+        setStatus('welcome');
+      },
+      downloadBrowserCopy: async () => {
+        const copy = await loadCopy();
+        if (!copy) return;
+        const body =
+          copy.kind === 'plain' ? copy.profile : { format: 'zakat-helper', encrypted: copy.blob };
+        downloadText(JSON.stringify(body, null, 2), 'zakat-browser-copy.json');
       },
     };
-  }, [status, open, prompt, lockError, lockedCopy, errorMessage, adopt, handleOpened, fail]);
+  }, [
+    status,
+    open,
+    prompt,
+    notice,
+    lockError,
+    lockedCopy,
+    failure,
+    adopt,
+    handleOpened,
+    openFromCopy,
+    failWith,
+    setOpen,
+  ]);
 
   return <SessionContext value={api}>{children}</SessionContext>;
 }

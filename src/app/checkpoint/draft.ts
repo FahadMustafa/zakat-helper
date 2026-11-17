@@ -168,3 +168,11 @@ export function insertMissingYear(p: Profile, laterId: string, id: string): Prof
   const date = addDays(earlier.date, YEAR_DAYS[p.settings.yearType]);
   return { ...p, checkpoints: [...p.checkpoints, draftFrom(p, id, date, earlier)] };
 }
+
+/** Remove a draft year. Finished years are reopened first, never deleted from here. */
+export function discardDraft(p: Profile, checkpointId: string): Profile {
+  const c = p.checkpoints.find((x) => x.id === checkpointId);
+  if (!c) throw new Error(`Unknown checkpoint "${checkpointId}"`);
+  if (c.status !== 'draft') throw new Error('Only a draft can be discarded; this year is finished');
+  return { ...p, checkpoints: p.checkpoints.filter((x) => x.id !== checkpointId) };
+}

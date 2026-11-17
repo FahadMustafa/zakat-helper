@@ -42,7 +42,8 @@ export function finaliseCheckpoint(p: Profile, checkpointId: string, now: string
   const result = computeCheckpoint(p, checkpointId);
   if (!result.ok) return { kind: 'missing', missing: result.missing };
 
-  const isLatest = latest(p)?.id === checkpointId;
+  // Advance payments count towards the latest year, and only when it has zakat due.
+  const takesAdvance = latest(p)?.id === checkpointId && result.outcome.kind === 'due';
   return {
     kind: 'finalised',
     profile: {
@@ -57,7 +58,7 @@ export function finaliseCheckpoint(p: Profile, checkpointId: string, now: string
             }
           : x,
       ),
-      payments: isLatest
+      payments: takesAdvance
         ? p.payments.map((x) =>
             x.appliesTo.kind === 'advance'
               ? { ...x, appliesTo: { kind: 'checkpoint', checkpointId } }

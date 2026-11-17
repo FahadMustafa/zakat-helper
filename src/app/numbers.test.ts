@@ -18,6 +18,9 @@ describe('parseAmountInput', () => {
 
   it('rejects ambiguous or malformed input', () => {
     for (const bad of [
+      '0,125',
+      '00,500',
+      '1.0000000000000000001',
       '1,2.3,4',
       '1.2.3',
       '12,34',

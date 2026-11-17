@@ -232,6 +232,7 @@ function HoldingRow({
                 <AmountInput
                   id={`${id}-fraction`}
                   label={t.fraction}
+                  max="1"
                   value={entry.treatment.zakatableFraction}
                   onCommit={(v) => {
                     set({

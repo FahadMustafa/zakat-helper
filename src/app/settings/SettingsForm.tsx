@@ -39,7 +39,15 @@ function Sources({ list }: { list: readonly Source[] }) {
   );
 }
 
-function CurrencySelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function CurrencySelect({
+  value,
+  onChange,
+  locked,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  locked: boolean;
+}) {
   const locale = useLocale();
   const t = useT();
   const names = new Intl.DisplayNames([locale], { type: 'currency' });
@@ -55,6 +63,7 @@ function CurrencySelect({ value, onChange }: { value: string; onChange: (v: stri
       <label htmlFor="base-currency">{t.settings.baseCurrency.title}</label>
       <select
         id="base-currency"
+        disabled={locked}
         value={value}
         onChange={(e) => {
           onChange(e.target.value);
@@ -63,7 +72,9 @@ function CurrencySelect({ value, onChange }: { value: string; onChange: (v: stri
         <optgroup label="">{COMMON.filter((c) => all.includes(c)).map(option)}</optgroup>
         <optgroup label="—">{rest.map(option)}</optgroup>
       </select>
-      <small className="hint">{t.settings.baseCurrency.detail}</small>
+      <small className="hint">
+        {locked ? t.settings.baseCurrency.locked : t.settings.baseCurrency.detail}
+      </small>
     </div>
   );
 }
@@ -72,9 +83,11 @@ function CurrencySelect({ value, onChange }: { value: string; onChange: (v: stri
 export function SettingsForm({
   value,
   onChange,
+  currencyLocked = false,
 }: {
   value: Settings;
   onChange: (s: Settings) => void;
+  currencyLocked?: boolean;
 }) {
   const t = useT().settings;
   const set = <K extends keyof Settings>(k: K, v: Settings[K]) => {
@@ -84,6 +97,7 @@ export function SettingsForm({
   return (
     <div className="settings">
       <CurrencySelect
+        locked={currencyLocked}
         value={value.baseCurrency}
         onChange={(v) => {
           set('baseCurrency', v);
