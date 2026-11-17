@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatAmount, parseAmountInput } from './numbers';
+import { formatAmount, parseAmountInput, percent } from './numbers';
 
 describe('parseAmountInput', () => {
   it('reads Arabic-Indic digits with Arabic separators', () => {
@@ -42,5 +42,12 @@ describe('formatAmount', () => {
 
   it('uses Western digits in Arabic', () => {
     expect(formatAmount('6937.5', 'SAR', 'ar')).toMatch(/6.937.50/);
+  });
+});
+
+describe('percent', () => {
+  it('shows rates exactly', () => {
+    expect(percent('0.025')).toBe('2.5%');
+    expect(percent('0.025775')).toBe('2.5775%');
   });
 });

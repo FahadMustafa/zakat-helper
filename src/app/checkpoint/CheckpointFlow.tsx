@@ -12,7 +12,7 @@ export function CheckpointFlow({
   review,
 }: {
   checkpointId: string;
-  review: (back: () => void) => ReactNode;
+  review: (nav: { goPrices: () => void; goHoldings: () => void }) => ReactNode;
 }) {
   const t = useT().checkpoint;
   const { profile } = useOpenProfile();
@@ -54,7 +54,7 @@ export function CheckpointFlow({
           </div>
         </>
       )}
-      {step === 'review' && review(go('holdings'))}
+      {step === 'review' && review({ goPrices: go('prices'), goHoldings: go('holdings') })}
     </main>
   );
 }

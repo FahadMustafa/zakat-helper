@@ -2,7 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { finaliseCheckpoint } from '../../engine/ledger';
 import type { Profile } from '../../engine/schema';
 import { sampleProfile } from '../../engine/testing/sample';
-import { addHolding, closeHolding, currenciesInUse, metalsNeeded, startCheckpoint } from './draft';
+import {
+  addHolding,
+  closeHolding,
+  currenciesInUse,
+  insertMissingYear,
+  metalsNeeded,
+  startCheckpoint,
+} from './draft';
 
 function finalisedSample(): Profile {
   const r = finaliseCheckpoint(sampleProfile(), 'cp-1447', '2026-03-02T00:00:00Z');
@@ -104,5 +111,23 @@ describe('what prices a checkpoint needs', () => {
       })),
     };
     expect(metalsNeeded(cashOnly, 'cp-1447')).toEqual(['silver']);
+  });
+});
+
+describe('insertMissingYear', () => {
+  it('adds a draft one zakat year after the earlier checkpoint, copied from it', () => {
+    const base = finalisedSample(); // cp-1447 on 2026-03-01
+    const later = startCheckpoint(base, 'late', '2028-01-01');
+    const moved: Profile = {
+      ...later,
+      checkpoints: later.checkpoints.map((c) =>
+        c.id === 'late' ? { ...c, date: '2028-01-20' } : c,
+      ),
+    };
+    const p = insertMissingYear(moved, 'late', 'gap');
+    const gap = p.checkpoints.find((c) => c.id === 'gap');
+    expect(gap?.date).toBe('2027-02-18');
+    expect(gap?.entries).toEqual(sampleProfile().checkpoints[0]?.entries);
+    expect(gap?.status).toBe('draft');
   });
 });

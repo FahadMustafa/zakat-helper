@@ -1,3 +1,4 @@
+import { Dec } from '../engine/money';
 import type { Locale } from './dates';
 
 const DIGIT_MAP: Record<string, string> = {};
@@ -39,4 +40,9 @@ export function formatAmount(value: string, currency: string, locale: Locale): s
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   }).format(value as Intl.StringNumericLiteral);
+}
+
+/** "0.025" -> "2.5%", exactly. */
+export function percent(rate: string): string {
+  return `${Dec.parse(rate).mul(Dec.fromInt(100)).toString()}%`;
 }

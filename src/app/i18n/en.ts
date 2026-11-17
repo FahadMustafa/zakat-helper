@@ -101,6 +101,29 @@ export const en = {
     toPrices: 'Back to date and prices',
     backToHoldings: 'Back to what you hold',
   },
+  review: {
+    missingTitle: 'A few figures are still needed',
+    goPrices: 'Go to date and prices',
+    goHoldings: 'Go to what you hold',
+    zakatableTotal: 'Zakatable total',
+    deductions: 'Debts taken off',
+    unpaidPrior: 'Unpaid zakat from earlier years, taken off',
+    netTotal: 'Total after deductions',
+    nisab: (metal: 'gold' | 'silver', grams: string, amount: string) =>
+      `Nisab: ${grams} g of ${metal === 'gold' ? 'gold' : 'silver'}, ${amount} today`,
+    estimate: 'Estimated lowest total during the year',
+    estimateDetail: "The lower of last year and today, both valued at today's prices.",
+    override: 'Your lowest total from statements (optional)',
+    overrideDetail: 'Only a lower figure changes the result.',
+    dipped: 'My total fell below nisab at some point this year',
+    base: 'Zakat is worked out on',
+    due: (rate: string) => `Zakat due at ${rate}`,
+    settingsUsed: 'Worked out with these settings',
+    finalise: 'Finish this year',
+    finaliseDetail:
+      'Finishing keeps these figures for this year. Changing settings later will not change them.',
+    addMissingYear: 'Add the missing year',
+  },
   firstRun: {
     title: 'Work out your zakat privately',
     intro:

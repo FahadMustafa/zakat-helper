@@ -46,6 +46,26 @@ export function defaultEntry(h: Holding): Entry {
   }
 }
 
+/** A new draft on `date`, holdings and classification copied from `source` (prices left empty). */
+function draftFrom(
+  p: Profile,
+  id: string,
+  date: string,
+  source: Checkpoint | undefined,
+): Checkpoint {
+  const open = new Set(
+    p.holdings.filter((h) => h.closedAt === undefined || h.closedAt > date).map((h) => h.id),
+  );
+  return {
+    id,
+    date,
+    baseCurrency: p.settings.baseCurrency,
+    prices: { fx: {}, metalPerGramPure: {}, perHolding: {} },
+    entries: source ? source.entries.filter((e) => open.has(e.holdingId)) : [],
+    status: 'draft',
+  };
+}
+
 /**
  * Start a new zakat year: one zakat year after the latest checkpoint (or today for the first),
  * holdings and their classification copied forward, prices left for the user to enter.
@@ -53,18 +73,7 @@ export function defaultEntry(h: Holding): Entry {
 export function startCheckpoint(p: Profile, id: string, today: string): Profile {
   const last = latest(p);
   const date = last ? addDays(last.date, YEAR_DAYS[p.settings.yearType]) : today;
-  const open = new Set(
-    p.holdings.filter((h) => h.closedAt === undefined || h.closedAt > date).map((h) => h.id),
-  );
-  const c: Checkpoint = {
-    id,
-    date,
-    baseCurrency: p.settings.baseCurrency,
-    prices: { fx: {}, metalPerGramPure: {}, perHolding: {} },
-    entries: last ? last.entries.filter((e) => open.has(e.holdingId)) : [],
-    status: 'draft',
-  };
-  return { ...p, checkpoints: [...p.checkpoints, c] };
+  return { ...p, checkpoints: [...p.checkpoints, draftFrom(p, id, date, last)] };
 }
 
 export function addHolding(p: Profile, checkpointId: string, h: Holding): Profile {
@@ -142,4 +151,20 @@ export function withKey<V>(
 ): Record<string, V> {
   const rest = Object.fromEntries(Object.entries(record).filter(([k]) => k !== key));
   return value === undefined ? rest : { ...rest, [key]: value };
+}
+
+/**
+ * Add the year skipped before `laterId`: one zakat year after the checkpoint before it,
+ * holdings copied from that earlier checkpoint.
+ */
+export function insertMissingYear(p: Profile, laterId: string, id: string): Profile {
+  const later = p.checkpoints.find((c) => c.id === laterId);
+  if (!later) throw new Error(`Unknown checkpoint "${laterId}"`);
+  const earlier = [...p.checkpoints]
+    .filter((c) => c.date < later.date)
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .at(-1);
+  if (!earlier) throw new Error('No earlier checkpoint to copy from');
+  const date = addDays(earlier.date, YEAR_DAYS[p.settings.yearType]);
+  return { ...p, checkpoints: [...p.checkpoints, draftFrom(p, id, date, earlier)] };
 }

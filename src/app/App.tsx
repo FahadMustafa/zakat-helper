@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { Locale } from './dates';
 import { CheckpointFlow } from './checkpoint/CheckpointFlow';
 import { startCheckpoint } from './checkpoint/draft';
+import { Review } from './checkpoint/Review';
 import { FirstRun } from './firstRun/FirstRun';
 import { Header } from './Header';
 import { Home } from './home/Home';
@@ -65,7 +66,18 @@ function OpenApp() {
         <CheckpointFlow
           key={view.checkpointId}
           checkpointId={view.checkpointId}
-          review={(back) => <ReviewPlaceholder back={back} />}
+          review={(nav) => (
+            <Review
+              checkpointId={view.checkpointId}
+              {...nav}
+              onFinished={() => {
+                setView({ kind: 'year', checkpointId: view.checkpointId });
+              }}
+              onOpenCheckpoint={(checkpointId) => {
+                setView({ kind: 'checkpoint', checkpointId });
+              }}
+            />
+          )}
         />
       );
       break;
@@ -82,17 +94,6 @@ function OpenApp() {
       />
       {screen}
     </>
-  );
-}
-
-function ReviewPlaceholder({ back }: { back: () => void }) {
-  const t = useT();
-  return (
-    <div className="actions">
-      <button className="btn quiet" type="button" onClick={back}>
-        {t.checkpoint.backToHoldings}
-      </button>
-    </div>
   );
 }
 
