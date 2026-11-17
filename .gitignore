@@ -7,3 +7,9 @@
 *.gate.lock*
 .codex/
 .cursor/
+node_modules/
+dist/
+.wrangler/
+.superpowers/
+test-results/
+playwright-report/

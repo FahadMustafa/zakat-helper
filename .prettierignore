@@ -1,0 +1,6 @@
+dist
+.beads
+.agents
+.claude
+skills/*/scripts
+package-lock.json

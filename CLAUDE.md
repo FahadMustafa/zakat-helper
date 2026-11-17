@@ -2,7 +2,18 @@
 
 A privacy-first, browser-only app for working out yearly zakat: what you hold, what is zakatable, what is due, what you have paid and what is left. Arabic and English. The same zakat engine ships as an Agent Skill so people can run it in their own agent setups.
 
-Status: design awaiting approval; nothing built yet. Tasks live in beads (`bd ready`).
+Status: in development. Tasks live in beads (`bd ready`); epic `zakat-helper-aru` carries the build rulings in its notes.
+
+## Build & Test
+
+```bash
+npm run verify    # gate before claiming done: typecheck + lint + format:check + test + build
+npx vitest run <path>
+npm run deploy    # build + npx wrangler deploy (Cloudflare Workers static assets)
+```
+
+- `src/engine` is type-checked by `tsconfig.engine.json` with no DOM lib, so DOM use there fails the build.
+- TypeScript is pinned to 6.0.x until typescript-eslint supports 7.
 
 ## Why
 
@@ -87,6 +98,7 @@ Defaults in **bold**, each option with a one-line explanation and source links i
 - No school presets in v1 (accuracy risk of claiming a whole school's position). Revisit once rules.md is reviewed.
 
 Sources retrieved during design (2026-11-17):
+
 - IslamQA: 50801 (hawl), 337998 (currencies, nisab for cash), 19901 and 59866 (jewellery), 380902 and 69912 (shares, company pays), 231858 (real estate), 125854 and 1817 (debts owed to you), 22426 (debts you owe), 98528 (advance payment): `https://islamqa.info/en/answers/<n>`
 - Dar al-Ifta Egypt: https://www.dar-alifta.org/en/fatwa/details/7705/is-zakat-payable-on-the-gold-and-silver-jewelry-that-a-woman-owns , https://www.dar-alifta.org/en/fatwa/details/7733/paying-zakat-on-jewelry
 - NZF: https://nzf.org.uk/knowledge/can-a-solar-year-be-used-for-zakat-calculation/ , https://nzf.org.uk/knowledge/shares-unit-trusts-and-equity-investments/ , https://nzf.org.uk/knowledge/payment-of-zakat-deductible-liabilities/ , https://nzf.org.uk/knowledge/will-an-outstanding-zakat-debt-be-deductible-when-calculating-my-zakat-for-this-year/ , https://nzf.org.uk/knowledge/is-zakat-due-on-all-currencies/ , https://nzf.org.uk/knowledge/zakat-on-cryptocurrencies/
@@ -126,6 +138,7 @@ Sources retrieved during design (2026-11-17):
 Clean, elegant, simple, easy to use. Run the `frontend-design` skill before any UI code: token plan (palette, type with Arabic coverage, layout) plus mockups of home, the checkpoint flow and the payments view, approved by Fahad before building screens.
 
 Main flow:
+
 - First run: open a file or start new, then language, base currency and rule settings (sensible defaults, explanations inline).
 - Home: list of zakat years with status (draft / due / settled) and outstanding amount; one primary action "Start this year's zakat".
 - Checkpoint: date and prices, then holdings (each row shows last year next to this year), then the breakdown, then finalise.
@@ -144,6 +157,7 @@ Main flow:
 This file provides instructions and context for AI coding agents working on this project.
 
 <!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:1105d646 -->
+
 ## Beads Issue Tracker
 
 This project uses **bd (beads)** for issue tracking. Run `bd prime` to see full workflow context and commands.
@@ -193,9 +207,9 @@ This protocol applies when ending a Beads implementation workflow. It is subordi
 5. **Hand off** - Summarize changes, validation, issue status, and any blocked sync/commit/push step
 
 **Critical rules:**
+
 - Explicit user or orchestrator instructions override this Beads block.
 - Do not commit or push without clear authority from the active profile or the current user request.
 - If a required sync or push is blocked, stop and report the exact command and error.
+
 <!-- END BEADS INTEGRATION -->
-
-
