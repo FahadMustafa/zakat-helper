@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "zakat_helper",
+  "project_id": "75ec6045-61f4-4dd5-86c5-dda84bfe9ae4"
+}
