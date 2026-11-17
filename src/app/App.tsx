@@ -6,6 +6,7 @@ import { Review } from './checkpoint/Review';
 import { FirstRun } from './firstRun/FirstRun';
 import { Header } from './Header';
 import { Home } from './home/Home';
+import { YearPage } from './home/YearPage';
 import { applyDocumentLocale } from './i18n';
 import { LocaleContext, useT } from './i18n/locale';
 import { Prompts } from './Prompts';
@@ -58,8 +59,25 @@ function OpenApp() {
   let screen;
   switch (view.kind) {
     case 'home':
+      screen = (
+        <Home
+          onStart={startYear}
+          onOpenYear={(checkpointId) => {
+            setView({ kind: 'year', checkpointId });
+          }}
+        />
+      );
+      break;
     case 'year':
-      screen = <Home onStart={startYear} />;
+      screen = (
+        <YearPage
+          key={view.checkpointId}
+          checkpointId={view.checkpointId}
+          onEdit={() => {
+            setView({ kind: 'checkpoint', checkpointId: view.checkpointId });
+          }}
+        />
+      );
       break;
     case 'checkpoint':
       screen = (

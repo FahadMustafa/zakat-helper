@@ -17,9 +17,9 @@ export async function startNew(page: Page): Promise<void> {
 }
 
 /** Click Save file and return the downloaded file's path. */
-export async function saveToDisk(page: Page): Promise<string> {
+export async function saveToDisk(page: Page, button = 'Save file'): Promise<string> {
   const download = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Save file' }).click();
+  await page.getByRole('button', { name: button }).click();
   const d = await download;
   const path = `test-results/${String(Date.now())}-${d.suggestedFilename()}`;
   await d.saveAs(path);
