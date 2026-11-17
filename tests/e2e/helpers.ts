@@ -35,3 +35,49 @@ export async function openFromDisk(
   await page.getByRole('button', { name: button }).click();
   await (await chooser).setFiles(path);
 }
+
+/** Wait until the app has written its working copy to IndexedDB (writes are async after each change). */
+export async function waitForWorkingCopy(
+  page: Page,
+  kind: 'plain' | 'encrypted' = 'plain',
+): Promise<void> {
+  await page.waitForFunction(
+    (wanted) =>
+      new Promise<boolean>((resolve) => {
+        type Req = {
+          result: unknown;
+          onsuccess: (() => void) | null;
+          onerror: (() => void) | null;
+        };
+        type Db = {
+          transaction: (s: string) => { objectStore: (s: string) => { get: (k: string) => Req } };
+          close: () => void;
+          objectStoreNames: { contains: (s: string) => boolean };
+        };
+        const idb = (globalThis as unknown as { indexedDB: { open: (n: string) => Req } })
+          .indexedDB;
+        const open = idb.open('zakat-helper');
+        open.onerror = () => {
+          resolve(false);
+        };
+        open.onsuccess = () => {
+          const db = open.result as Db;
+          if (!db.objectStoreNames.contains('kv')) {
+            db.close();
+            resolve(false);
+            return;
+          }
+          const get = db.transaction('kv').objectStore('kv').get('working-copy');
+          get.onsuccess = () => {
+            db.close();
+            resolve((get.result as { kind?: string } | undefined)?.kind === wanted);
+          };
+          get.onerror = () => {
+            db.close();
+            resolve(false);
+          };
+        };
+      }),
+    kind,
+  );
+}

@@ -1,5 +1,11 @@
 import { expect, test } from '@playwright/test';
-import { openFromDisk, saveToDisk, startNew, withoutFilePickers } from './helpers';
+import {
+  openFromDisk,
+  saveToDisk,
+  startNew,
+  waitForWorkingCopy,
+  withoutFilePickers,
+} from './helpers';
 
 test.beforeEach(async ({ page }) => {
   await withoutFilePickers(page);
@@ -8,6 +14,7 @@ test.beforeEach(async ({ page }) => {
 test('a refresh keeps unsaved work', async ({ page }) => {
   await startNew(page);
   await expect(page.getByRole('heading', { name: 'Your zakat years' })).toBeVisible();
+  await waitForWorkingCopy(page);
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Your zakat years' })).toBeVisible();
   await expect(page.getByRole('status')).toHaveText('Not saved to a file yet');
@@ -21,6 +28,7 @@ test('an encrypted working copy asks for the passphrase after a reload', async (
   await page.getByLabel('Type it again').fill('correct horse battery');
   await page.getByRole('button', { name: 'Protect my file' }).click();
   await expect(page.getByText('Passphrase set.')).toBeVisible({ timeout: 15_000 });
+  await waitForWorkingCopy(page, 'encrypted');
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Unlock your zakat file' })).toBeVisible();
   await page.getByLabel('Passphrase').fill('wrong one');
