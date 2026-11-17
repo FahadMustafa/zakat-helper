@@ -2,15 +2,19 @@
 
 A privacy-first, browser-only app for working out yearly zakat: what you hold, what is zakatable, what is due, what you have paid and what is left. Arabic and English. The same zakat engine ships as an Agent Skill so people can run it in their own agent setups.
 
-Status: in development. Tasks live in beads (`bd ready`); epic `zakat-helper-aru` carries the build rulings in its notes.
+Status: v1 built and deployed to https://zakat-helper.fahadamustafa.workers.dev (not announced). Tasks live in beads (`bd ready`); epic `zakat-helper-aru` carries the build rulings in its notes.
 
 ## Build & Test
 
 ```bash
 npm run verify    # gate before claiming done: typecheck + lint + format:check + test + build
 npx vitest run <path>
+npm run test:e2e  # Playwright (tests/e2e), 1 worker; not part of verify, run after UI changes
+npm run build:skill  # after any engine/cli change, or verify fails on a stale skill bundle
 npm run deploy    # build + npx wrangler deploy (Cloudflare Workers static assets)
 ```
+
+- Playwright can't drive native file pickers: tests delete `showOpenFilePicker`/`showSaveFilePicker` (`tests/e2e/helpers.ts`) to use the download and `<input type=file>` path.
 
 - `src/engine` is type-checked by `tsconfig.engine.json` with no DOM lib, so DOM use there fails the build.
 - TypeScript is pinned to 6.0.x until typescript-eslint supports 7.

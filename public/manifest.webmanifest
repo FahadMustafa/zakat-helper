@@ -1,0 +1,10 @@
+{
+  "name": "Zakat Helper",
+  "short_name": "Zakat",
+  "description": "Work out your yearly zakat privately, in Arabic or English.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f3f5f2",
+  "theme_color": "#1e4d5c",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
