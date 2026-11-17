@@ -16,8 +16,10 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
-    "verify": "npm run typecheck && npm run lint && npm run format:check && npm run test && npm run build",
-    "deploy": "npm run build && npx wrangler@4 deploy"
+    "verify": "npm run typecheck && npm run lint && npm run format:check && npm run check:skill && npm run test && npm run build",
+    "deploy": "npm run build && npx wrangler@4 deploy",
+    "build:skill": "node scripts/build-skill.mjs",
+    "check:skill": "node scripts/check-skill-bundle.mjs"
   },
   "dependencies": {
     "react": "^19.3.1",
@@ -30,6 +32,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.3.0",
+    "esbuild": "^0.28.2",
     "eslint": "^10.15.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.8",
