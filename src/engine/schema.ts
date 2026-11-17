@@ -112,7 +112,6 @@ export type Entry = z.infer<typeof Entry>;
 
 export const LineReason = z.enum([
   'counted',
-  'converted',
   'long-term-fraction',
   'jewellery-exempt',
   'company-pays',
