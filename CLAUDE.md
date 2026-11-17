@@ -135,6 +135,8 @@ Sources retrieved during design (2026-11-17):
 
 ### Look and feel
 
+Approved 2026-11-17 (tokens in `src/app/styles/tokens.css`): a calm single column like a booklet page, start-aligned so it mirrors in Arabic. Amiri for headings and big figures, Readex Pro for UI, both self-hosted via @fontsource. Ink-well teal primary; gold only for amounts due and the "1 in 40" mark (40 squares, one gold), the single bold element.
+
 Clean, elegant, simple, easy to use. Run the `frontend-design` skill before any UI code: token plan (palette, type with Arabic coverage, layout) plus mockups of home, the checkpoint flow and the payments view, approved by Fahad before building screens.
 
 Main flow:

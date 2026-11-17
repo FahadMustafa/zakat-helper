@@ -5,5 +5,13 @@
     "types": ["node"],
     "tsBuildInfoFile": "node_modules/.tmp/node.tsbuildinfo"
   },
-  "include": ["vite.config.ts", "eslint.config.js", "scripts", "cli", "src/engine"]
+  "include": [
+    "vite.config.ts",
+    "eslint.config.js",
+    "scripts",
+    "cli",
+    "src/engine",
+    "playwright.config.ts",
+    "tests"
+  ]
 }

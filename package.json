@@ -19,15 +19,19 @@
     "verify": "npm run typecheck && npm run lint && npm run format:check && npm run check:skill && npm run test && npm run build",
     "deploy": "npm run build && npx wrangler@4 deploy",
     "build:skill": "node scripts/build-skill.mjs",
-    "check:skill": "node scripts/check-skill-bundle.mjs"
+    "check:skill": "node scripts/check-skill-bundle.mjs",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@fontsource-variable/readex-pro": "^5.3.0",
+    "@fontsource/amiri": "^5.3.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "zod": "^4.6.7"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.65.1",
     "@types/node": "^22.20.5",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",

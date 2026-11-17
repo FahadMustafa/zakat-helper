@@ -1,0 +1,44 @@
+/* Approved design (2026-11-17): one calm column like a booklet page, start-aligned so it mirrors in
+   Arabic; Amiri headings, Readex Pro UI; ink-well teal; one gold "1 in 40" mark carries the identity. */
+:root {
+  --paper: #f3f5f2;
+  --sheet: #ffffff;
+  --ink: #17232a;
+  --ink-soft: #55636a;
+  --rule: #d9dfdb;
+  --well: #1e4d5c;
+  --well-soft: #e3ecee;
+  --dinar: #a5791f;
+  --dinar-soft: #f4ebd6;
+  --good: #3b7653;
+  --good-soft: #e2efe6;
+  --warn: #a9532e;
+  --warn-soft: #f6e6de;
+  --font-display: 'Amiri', 'Times New Roman', serif;
+  --font-ui: 'Readex Pro Variable', system-ui, -apple-system, 'Segoe UI', Tahoma, sans-serif;
+  --step--1: 0.8125rem;
+  --step-0: 1rem;
+  --step-1: 1.25rem;
+  --step-2: 1.625rem;
+  --step-3: 2.25rem;
+  --radius: 10px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #10181b;
+    --sheet: #172226;
+    --ink: #e5ecea;
+    --ink-soft: #9aa9ad;
+    --rule: #2a383d;
+    --well: #86b8c6;
+    --well-soft: #1d3238;
+    --dinar: #d8ae58;
+    --dinar-soft: #2e2716;
+    --good: #7dc197;
+    --good-soft: #18302a;
+    --warn: #e39674;
+    --warn-soft: #36211a;
+    color-scheme: dark;
+  }
+}
